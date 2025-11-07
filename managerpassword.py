@@ -73,15 +73,19 @@ class Create_password(QDialog):
         elif is_letters == False and is_numbers == False and is_special_characters == False:
             password_ = "".join(random.sample(all, lenght))
             self.final_password.setText(password_)
+        else:
+            password_ = '123456'
+
         # гененрация пароля по количеству символов и их типу
 
         con = sqlite3.connect('my_password.db')
         cur = con.cursor()
         # подключаем БД для добавления пароля
         login_ = self.login.text()
-        note_ = self.note.text()
+        note_ = self.lineEdit_2.text()
         # берем из LineEdit логин и заметку
-        cur.execute("""INSERT INTO my_password(login, password, note) VALUES(login_,password_,note_) """)
+        insert = """INSERT INTO passwords (login, password, note) VALUES(\"""" + login_ + """\", \"""" + password_ + """\", \"""" + note_ + """\")"""
+        cur.execute(insert)
         # запись пароля в бд под его логином и заметке к нему
         # тут еще надо сделать все это с типом пароля который храниться во второй таблице
 
