@@ -22,9 +22,9 @@ class MainWidget(QMainWindow):
         # открытие окна с созданием пароля
 
     def open_view_window(self):
-        view_password_ = QDialog(self)
-        uic.loadUi('viewing_password.ui', view_password_)
-        view_password_.show()
+        self.view_password_ = Viewing_passwords()
+        # uic.loadUi('viewing_password.ui', view_password_)
+        self.view_password_.show()
         # открытие окна с просмотром существующих паролей
 
 class Create_password(QDialog):
@@ -39,6 +39,10 @@ class Create_password(QDialog):
         is_numbers = self.numbers.isChecked()
         is_special_characters = self.special_characters.isChecked()
         # считывание видов символов(буквы,цифры,спец символы) кторые пользователь хочет использовать
+        is_work = self.work.isChecked()
+        is_personal = self.personal.isChecked()
+        is_outher = self.outher.isChecked()
+        # считываем тип пароля
         lenght = int(self.quantity.text())
         # считывание длины пароля
         letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
@@ -75,8 +79,13 @@ class Create_password(QDialog):
             self.final_password.setText(password_)
         else:
             password_ = '123456'
-
         # гененрация пароля по количеству символов и их типу
+        if is_work == True and is_personal == False and is_outher == False:
+            type_ = '1'
+        if is_work == False and is_personal == True and is_outher == False:
+            type_ = '2'
+        if is_work == False and is_personal == False and is_outher == True:
+            type_ = '3'
 
         con = sqlite3.connect('my_password.db')
         cur = con.cursor()
@@ -84,17 +93,19 @@ class Create_password(QDialog):
         login_ = self.login.text()
         note_ = self.lineEdit_2.text()
         # берем из LineEdit логин и заметку
-        insert = """INSERT INTO passwords (login, password, note) VALUES(\"""" + login_ + """\", \"""" + password_ + """\", \"""" + note_ + """\")"""
-        cur.execute(insert)
+        data = [(login_, password_, note_, type_)]
+        insert = """INSERT INTO passwords (login, password, note, typeid) VALUES(?, ?, ?, ?)"""
+        cur.executemany(insert, data)
+        con.commit()
         # запись пароля в бд под его логином и заметке к нему
-        # тут еще надо сделать все это с типом пароля который храниться во второй таблице
+        # тут еще надо сделать все это с типом пар  оля который храниться во второй таблице
 
 class Viewing_passwords(QDialog): # окно поиска и удаления паролей
     def __init__(self):
         super().__init__()
         uic.loadUi('viewing_password.ui', self)
         self.search_password.clicked.connect(self.function_search_password)
-        self.removal.clicked.connect(self.open_dialog_window())
+        self.removal.clicked.connect(self.open_dialog_window)
 
     def function_search_password(self): # функция нахождения пароля
         con = sqlite3.connect('my_password.db')
@@ -102,11 +113,13 @@ class Viewing_passwords(QDialog): # окно поиска и удаления п
         login_1 = self.login.text()
         note_1 = self.note.text()
         # берем введеный пользователей логин и заметку
-
-        result = cur.execute("""SELECT * FROM my_password
-                            WHERE login = login_1 AND note = note_1""").fetchone()
+        data = (login_1, note_1)
+        result = cur.execute("""SELECT password FROM passwords
+                            WHERE login = ? AND note = ?""", data).fetchone()
         # записываем в result найденый пароль
-        # надо тут записывать TextEdit найеный пароль
+
+        self.your_password_.setText(result[0])
+        ## выводим найденный пароль
 
     def open_dialog_window(self):
         delete_password_ = QDialog(self)
