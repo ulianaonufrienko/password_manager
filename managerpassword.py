@@ -23,7 +23,6 @@ class MainWidget(QMainWindow):
 
     def open_create_window(self):
         self.create_password_ = Create_password()
-        # uic.loadUi('creating_password.ui',create_password_)
         self.create_password_.show()
         # открытие окна с созданием пароля
 
@@ -38,7 +37,7 @@ class Create_password(QDialog):
         super().__init__()
         uic.loadUi('creating_password.ui', self)
         self.generate_password.clicked.connect(self.function_generate_password)
-        self.create_password.clicked.connect(self.function_create)
+        self.create_this_password.clicked.connect(self.function_create)
         self.setStyleSheet("""
                         QMainWindow {
                             background-color: dark grey;}
@@ -51,44 +50,41 @@ class Create_password(QDialog):
         is_letters = self.letters.isChecked()
         is_numbers = self.numbers.isChecked()
         is_special_characters = self.special_characters.isChecked() # считывание видов символов
-        lenght = int(self.quantity.text())  # считывание длины пароля
+        length = int(self.quantity.text())  # считывание длины пароля
         letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
         numbers = '0123456789'
         special_characters = "{}[]()*'/,_-!?"
+        all = letters + numbers + special_characters
         if is_letters == True and is_numbers == True and is_special_characters == True:
-            all = letters + numbers + special_characters
-            password_ = "".join(random.sample(all, lenght))
-            self.final_password.setText(password_)
+            password_ = "".join(random.sample(all, length))
+
         elif is_letters == True and is_numbers == True and is_special_characters == False:
             letters_and_numbers = letters + numbers
-            password_ = "".join(random.sample(letters_and_numbers, lenght))
-            self.final_password.setText(password_)
+            password_ = "".join(random.sample(letters_and_numbers, length))
         elif is_letters == True and is_numbers == False and is_special_characters == True:
             letters_and_special_characters = letters + special_characters
-            password_ = "".join(random.sample(letters_and_special_characters, lenght))
-            self.final_password.setText(password_)
+            password_ = "".join(random.sample(letters_and_special_characters, length))
         elif is_letters == False and is_numbers == True and is_special_characters == True:
             numbers_and_special_characters = numbers + special_characters
-            password_ = "".join(random.sample(numbers_and_special_characters, lenght))
-            self.final_password.setText(password_)
+            password_ = "".join(random.sample(numbers_and_special_characters, length))
         elif is_letters == True and is_numbers == False and is_special_characters == False:
-            password_ = "".join(random.sample(letters, lenght))
-            self.final_password.setText(password_)
+            password_ = "".join(random.sample(letters, length))
         elif is_letters == False and is_numbers == True and is_special_characters == False:
-            password_ = "".join(random.sample(numbers, lenght))
-            self.final_password.setText(password_)
+            password_ = "".join(random.sample(numbers, length))
         elif is_letters == False and is_numbers == False and is_special_characters == True:
-            password_ = "".join(random.sample(special_characters, lenght))
-            self.final_password.setText(password_)
+            password_ = "".join(random.sample(special_characters, length))
         elif is_letters == False and is_numbers == False and is_special_characters == False:
-            password_ = "".join(random.sample(all, lenght))
-            self.final_password.setText(password_)
+            password_ = "".join(random.sample(all, length))
         else:
             password_ = '123456'
+        self.final_password.setText(password_)
+
+    def function_create(self):
         is_work = self.work.isChecked()
         is_personal = self.personal.isChecked()
         is_outher = self.outher.isChecked()  # считываем тип пароля
         # гененрация пароля по количеству символов и их типу
+        type_ = '1'
         if is_work == True and is_personal == False and is_outher == False:
             type_ = '1'
         if is_work == False and is_personal == True and is_outher == False:
@@ -96,12 +92,15 @@ class Create_password(QDialog):
         if is_work == False and is_personal == False and is_outher == True:
             type_ = '3'
 
+        # подключаем БД для добавления пароля
         con = sqlite3.connect('my_password.db')
         cur = con.cursor()
-        # подключаем БД для добавления пароля
+
+        # берем из LineEdit логин и заметку
         login_ = self.login.text()
         note_ = self.lineEdit_2.text()
-        # берем из LineEdit логин и заметку
+        password_ = self.final_password.toPlainText()
+
         data = [(login_, password_, note_, type_)]
         insert = """INSERT INTO passwords (login, password, note, typeid) VALUES(?, ?, ?, ?)"""
         cur.executemany(insert, data)
